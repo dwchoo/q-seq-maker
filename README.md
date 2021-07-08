@@ -1,2 +1,2 @@
-# sample-data-repo
+# Query Sequence Generator
 
