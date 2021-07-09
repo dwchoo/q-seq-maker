@@ -130,3 +130,119 @@ def num2acgt(seq_num,join=True):
     else:
         result = np.array(result)
     return result
+
+
+# calculate GC <-> AT ratio
+class gc_at_classify_encoder:
+    classifier = {
+        'G' : np.array([1,0], dtype=np.int8),
+        'C' : np.array([1,0], dtype=np.int8),
+        'A' : np.array([0,1], dtype=np.int8),
+        'T' : np.array([0,1], dtype=np.int8),
+    }
+    
+    @classmethod
+    def letter_encoder(cls, letter):
+        return cls.classifier.get(letter,np.array([0,0],dtype=np.int8))
+    
+    @classmethod
+    def seq_encoder(cls, sequence):
+        classified_seq = list(map(cls.letter_encoder,sequence))
+        classified_seq = np.array(classified_seq)
+        return classified_seq
+    
+    @classmethod
+    def calc_seq_gc_at_rate(cls, sequence):
+        classified_seq = cls.seq_encoder(sequence)
+        sum_column = np.sum(classified_seq, axis=0)
+        sum_all = np.sum(classified_seq)
+        return sum_column / sum_all
+    
+    @classmethod
+    def batch_seq_encoder(cls, batch_seq):
+        batch_seq_classified_list = []
+        for seq in batch_seq:
+            batch_seq_classified_list.append(cls.seq_encoder(seq))
+        return np.array(batch_seq_classified_list)
+    
+    @classmethod
+    def calc_batch_seq_gc_at_rate(cls, batch_seq):
+        batch_seq_classified_list = []
+        for seq in batch_seq:
+            batch_seq_classified_list.append(cls.calc_seq_gc_at_rate(seq))
+        return np.array(batch_seq_classified_list)
+
+
+
+class query_type_code_encoder:
+
+    @classmethod
+    def seq_type_code_encoder(cls, seq, slice_length_list=[7,7,6]):
+        '''
+        arguments:
+            seq: query sequence, ACGTAAA
+            slice_length_list: [7,7,6]
+        return:
+            type_code, 123
+        '''
+        seq_encoded = gc_at_classify_encoder.seq_encoder(seq)
+        slice_position = cls.__make_slice_position(cls, slice_length_list)
+        type_code_list = []
+        for _start, _end in slice_position:
+            _seq_block = seq_encoded[_start:_end]
+            _type_code = cls.return_code(cls, _seq_block)
+            type_code_list.append(str(_type_code))
+        type_code = ''.join(type_code_list)
+        return type_code
+
+    @classmethod
+    def batch_seq_type_code_encoder(cls, seq_list, slice_length_list=[7,7,6]):
+        seq_array = np.array(seq_list)
+        assert len(seq_array.shape) == 1, \
+                f"Check seq_list shape, {seq_array.shape},{seq_array.dtype}"
+        batch_type_code_seq_list = []
+        for _seq in seq_array:
+            _type_code = cls.seq_type_code_encoder(_seq, slice_length_list)
+            batch_type_code_seq_list.append((_type_code, _seq))
+        return batch_type_code_seq_list
+        
+
+
+    def __make_slice_position(self, slice_length_list):
+        '''
+        input: slice length
+            [7,7,6]
+        output: slice position
+            [(0,7),(7,14),(14,20)]
+        '''
+        slice_position = []
+        previous_position = 0
+        next_position = 0
+        for _length in slice_length_list:
+            _start = previous_position
+            _end = _start + _length
+            slice_position.append((_start,_end))
+            previous_position = _end
+        return slice_position
+
+    def return_code(self, seq_block):
+        '''
+        input: seq_block
+            [0, 1],
+            [0, 1],
+            [0, 1],
+        output: 1
+            1: GC > AT
+            2: GC < AT
+            3: CG = AT
+        '''
+        gc_at_sum = np.sum(seq_block, axis=0)
+        assert len(gc_at_sum) == 2, f"Check seq_block shape, {seq_block.shape}"
+        if np.greater(*gc_at_sum):
+            return 1
+        elif np.less(*gc_at_sum):
+            return 2
+        elif np.equal(*gc_at_sum):
+            return 0
+        else:
+            return None

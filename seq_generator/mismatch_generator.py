@@ -1,4 +1,5 @@
 from encoder_decoder.seq_encoder_decoder import *
+from seq_generator.query_generator import *
 from seq_evaluator.evaluator import *
 
 import numpy as np
@@ -11,7 +12,14 @@ class generate_mismatch_data:
     nC2 mismatch
     distance based mismatch
     '''
-    def generate_query_seq_data(self, num_set, threshold, equal, log=False, job_name='query_seq'):
+    def generate_query_seq_data(self,
+        num_set,
+        threshold,
+        equal,
+        log=False,
+        job_name='query_seq',
+        save_path = '.'
+    ):
         '''
         input:
             num_set    : number of query set to generate
@@ -19,10 +27,11 @@ class generate_mismatch_data:
             equal      : True, if last group has equal case
             log        : True, if save log
             job_name   : string, job name
+            save_path  : save file path
         return:
             query_set  : [ACGT,AACG ...]
         '''
-        job_path = self.__return_job_folder_path_N_make(job_name=job_name, path='.')
+        job_path = self.__return_job_folder_path_N_make(job_name=job_name, path=save_path)
         save_file_path = f"{job_path}/{job_name}_query.txt"
         log_file_path = f"{job_path}/log/{job_name}.log"
         if log:
@@ -85,13 +94,14 @@ class generate_mismatch_data:
     
     def __seq_generate_log(self,log_path, log_name='Query_gen'):
         import logging
+        from logging.handlers import RotatingFileHandler
         from pathlib import Path
         logger = logging.getLogger(log_name)
         logger.setLevel(logging.DEBUG)
         #file_handler = logging.FileHandler(filename=log_dir,mode='a')
         #make folder contain log files
         Path(log_path).parent.mkdir(parents=True, exist_ok=True)
-        file_handler = logging.handlers.RotatingFileHandler(
+        file_handler = RotatingFileHandler(
             filename=log_path,
             mode = 'a',
             maxBytes=10*1024*1024,
@@ -117,6 +127,19 @@ class generate_mismatch_data:
         with open(file_name, 'r') as f:
             data = f.read().splitlines()
         return data
+
+
+class generate_8_nC2_data(generate_mismatch_data):
+    def __init__(self, num_set=1, threshold=7, **kwargs):
+        self.num_set = num_set
+        self.query_data = self.generate_query_seq_data(
+            num_set = self.num_set,
+            threshold= threshold,
+            equal=False,
+            **kwargs
+        )
+        self.mis_1_data = self.generate_one_mis_data(self.query_data)
+        self.mis_2_data = self.generate_nC2_data(self.query_data)
         
 
 # nC2 method

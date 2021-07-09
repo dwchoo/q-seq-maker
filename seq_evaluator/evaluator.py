@@ -90,6 +90,9 @@ def eval_dis_matrix(seq_array):
     return dis_matrix
 
 def classify_seq(seq_array, threshold=10):
+    '''
+    It has a problem that does not detect same sequence
+    '''
     assert type(threshold) in [int, float], f"threshold : {threshold}, {type(threshold)}"
     num = len(seq_array)
     dis_matrix = eval_dis_matrix(seq_array)
