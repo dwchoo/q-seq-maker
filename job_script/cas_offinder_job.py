@@ -13,6 +13,17 @@ def make_cas_offinder_script(
     PAM='NGG',
     check_mismatch=4,
 ):
+    '''
+    args:
+        query_seq_list : query_list, [ACGT,AACG,...]
+        job_name       : job_name(it is same of folder name), ./job_name/job_name_script.sh
+        job_path       : job files path, ./job_name
+        ref_path       : reference file(hg38, hbg19..) path
+        PAM            : PAM, NGG
+        check_mismatch : number of mismatch cas-offinder will find
+    output:
+        cas_offinder runing script, input file that contain query sequence
+    '''
     query_seq_list = np.array(query_seq_list)
     if PureWindowsPath(job_path).suffix:
         file_path = Path(job_path).parent
@@ -42,6 +53,20 @@ def analysis_cas_offinder_result(
     max_mismatch = 4,
     slice_length_list = [7,7,6],
 ):
+    '''
+    args:
+        output_file_path  : cas-offinder output file path,
+                            ./{job_name}/{job_name}_output.txt
+        query_text_path   : query text file path,
+                            ./{job_name}/{job_name}_query.txt
+        save_csv          : save result by csv file,
+                            it is saved in the  same path as the output file
+        max_mismatch      : the maximum value of number of mismatch
+        slice_length_list : slice point, [7,7,6]
+    output:
+        DataFrame, and csv file
+    '''
+    # load cas-offinder output file
     header = ['query','chr','site','seq','direction','mismatch']
     data_type = {
         'query'    : 'category',
@@ -55,19 +80,23 @@ def analysis_cas_offinder_result(
         names=header,
         dtype=data_type,
     )
+    # load query sequence text file
     query_list = np.array(generate_mismatch_data.read_sequence_tolist(query_text_path))
+    # convert sequence to type code
     query_type_code_list = query_type_code_encoder.batch_seq_type_code_encoder(
         seq_list= query_list,
         slice_length_list= slice_length_list,
         only_code= True
     )
 
+    # analysis number of mismatch in each sequence.
     query_set = data_frame['query'].unique()
     query_mismatch_info = {}
     for _query in query_set:
         query_mismatch_info[_query] = \
             data_frame[data_frame['query'] == _query]['mismatch'].value_counts().to_dict()
     
+    # Dictionary -> list
     query_mismatch_info_list = []
     for _query in query_list.reshape(-1):
         _tmp_list = []
@@ -76,16 +105,17 @@ def analysis_cas_offinder_result(
             _tmp_list.append(_tmp_query_info.get(i,0))
         query_mismatch_info_list.append(_tmp_list)
     query_mismatch_info_list = np.array(query_mismatch_info_list)
-    query_cg_at_rate_list = gc_at_classify_encoder.calc_batch_seq_gc_at_rate(query_set)
+    # calculate cg - at ratio
+    query_cg_at_ratio_list = gc_at_classify_encoder.calc_batch_seq_gc_at_ratio(query_set)
 
+    # concatenate all of data
     analysis_result_list = np.concatenate(
         [np.reshape(query_type_code_list,(-1,1)),
         np.reshape(query_list,(-1,1)),
-        query_cg_at_rate_list,
+        query_cg_at_ratio_list,
         query_mismatch_info_list],
         axis=1
     )
-
     columns_header = [
             'Type_code',
             'query',
@@ -93,13 +123,16 @@ def analysis_cas_offinder_result(
             'AT_rate',
             #'mis_0','mis_1','mis_2','mis_3','mis_4'
     ] + [f"mis_{i}" for i in range(max_mismatch+1)]
+    # make DataFrame
     query_info_df = pd.DataFrame(
         analysis_result_list,
         columns=columns_header,
     )
 
+    # save csv file
     if save_csv:
         file_path = Path(output_file_path).parent
         query_info_df.to_csv(f'{file_path}/query_analysis.csv',index=False)
+
     return query_info_df
     

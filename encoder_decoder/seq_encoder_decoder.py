@@ -152,7 +152,7 @@ class gc_at_classify_encoder:
         return classified_seq
     
     @classmethod
-    def calc_seq_gc_at_rate(cls, sequence):
+    def calc_seq_gc_at_ratio(cls, sequence):
         classified_seq = cls.seq_encoder(sequence)
         sum_column = np.sum(classified_seq, axis=0)
         sum_all = np.sum(classified_seq)
@@ -166,10 +166,10 @@ class gc_at_classify_encoder:
         return np.array(batch_seq_classified_list)
     
     @classmethod
-    def calc_batch_seq_gc_at_rate(cls, batch_seq):
+    def calc_batch_seq_gc_at_ratio(cls, batch_seq):
         batch_seq_classified_list = []
         for seq in batch_seq:
-            batch_seq_classified_list.append(cls.calc_seq_gc_at_rate(seq))
+            batch_seq_classified_list.append(cls.calc_seq_gc_at_ratio(seq))
         return np.array(batch_seq_classified_list)
 
 
