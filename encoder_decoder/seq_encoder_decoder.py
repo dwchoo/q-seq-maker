@@ -196,15 +196,23 @@ class query_type_code_encoder:
         return type_code
 
     @classmethod
-    def batch_seq_type_code_encoder(cls, seq_list, slice_length_list=[7,7,6]):
+    def batch_seq_type_code_encoder(cls, seq_list, slice_length_list=[7,7,6],only_code=True):
         seq_array = np.array(seq_list)
         assert len(seq_array.shape) == 1, \
                 f"Check seq_list shape, {seq_array.shape},{seq_array.dtype}"
         batch_type_code_seq_list = []
-        for _seq in seq_array:
-            _type_code = cls.seq_type_code_encoder(_seq, slice_length_list)
-            batch_type_code_seq_list.append((_type_code, _seq))
-        return batch_type_code_seq_list
+        batch_type_code_list = []
+        if only_code:
+            for _seq in seq_array:
+                _type_code = cls.seq_type_code_encoder(_seq, slice_length_list)
+                batch_type_code_list.append(_type_code)
+            return np.array(batch_type_code_list)
+
+        else:
+            for _seq in seq_array:
+                _type_code = cls.seq_type_code_encoder(_seq, slice_length_list)
+                batch_type_code_seq_list.append((_type_code, _seq))
+            return batch_type_code_seq_list
         
 
 
