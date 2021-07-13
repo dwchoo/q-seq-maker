@@ -33,7 +33,7 @@ class generate_mismatch_data:
             query_set  : [ACGT,AACG ...]
         '''
         job_path = self.__return_job_folder_path_N_make(job_name=job_name, path=save_path)
-        save_file_path = f"{job_path}/{job_name}_query.txt"
+        save_file_path = f"{job_path}/query_{job_name}.txt"
         log_file_path = f"{job_path}/log/{job_name}.log"
         if log:
             logger = self.__seq_generate_log(log_file_path,'Query')
@@ -111,11 +111,11 @@ class generate_mismatch_data:
         formatter = logging.Formatter(
             fmt= "%(asctime)s - %(name)s - %(message)s"
         )
-        file_handler.setLevel(logging.INFO)
+        file_handler.setLevel(logging.DEBUG)
         file_handler.setFormatter(formatter)
         
-        _ = list(map(logger.removeHandler,logger.handlers))
-        assert not logger.hasHandlers()
+        #_ = list(map(logger.removeHandler,logger.handlers))
+        #assert not logger.hasHandlers()
         logger.addHandler(file_handler)
         return logger
     

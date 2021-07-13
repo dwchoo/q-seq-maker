@@ -3,6 +3,7 @@ from encoder_decoder.seq_encoder_decoder import query_type_code_encoder, gc_at_c
 
 import numpy as np
 import pandas as pd
+import subprocess
 from pathlib import Path, PureWindowsPath
 
 def make_cas_offinder_script(
@@ -31,10 +32,13 @@ def make_cas_offinder_script(
         file_path = f"{job_path}"
     Path(file_path).mkdir(parents=True, exist_ok=True)
 
+    # Check cas-offinder available device
+    run_device = check_opencl_device()
+
     # make cas-offinder script
     with open(f"{file_path}/run_{job_name}_script.sh",'w') as file:
         file.write(f"#!/bin/bash\n")
-        file.write(f"""command=`cas-offinder $(dirname "$0")/{job_name}_input.txt G $(dirname "$0")/{job_name}_output.txt`\n""")
+        file.write(f"""command=`cas-offinder $(dirname "$0")/{job_name}_input.txt {run_device} $(dirname "$0")/{job_name}_output.txt`\n""")
         file.write(f"echo $command")
 
     # make input file
@@ -45,10 +49,32 @@ def make_cas_offinder_script(
         for _seq in query_seq_list:
             file.write(f"{_seq}NNN {check_mismatch}\n")
     
+# run cas-offinder
+def run_cas_offinder(file_path, log=True):
+    assert PureWindowsPath(file_path).suffix == '.sh', f"Check file, {file_path}"
+    command = ['bash',f"{file_path}"]
+    cas_offinder_run = subprocess.Popen(
+        command,
+        stdin  = subprocess.PIPE,
+        stdout = subprocess.PIPE,
+        stderr = subprocess.PIPE,
+        text = True,
+    )
+    output, log = cas_offinder_run.communicate()
+    log_path = f"{Path(file_path).parent}/log/cas-offinder.log"
+    logger = make_log(
+        log_path=log_path,
+        log_name=f'cas-offinder',
+    )
+    logger.warning(f"{output}")
+    logger.info(f"{log}")
+
+
 
 def analysis_cas_offinder_result(
     output_file_path,
     query_text_path,
+    job_name = None,
     save_csv=True,
     max_mismatch = 4,
     slice_length_list = [7,7,6],
@@ -58,7 +84,7 @@ def analysis_cas_offinder_result(
         output_file_path  : cas-offinder output file path,
                             ./{job_name}/{job_name}_output.txt
         query_text_path   : query text file path,
-                            ./{job_name}/{job_name}_query.txt
+                            ./{job_name}/query_{job_name}.txt
         save_csv          : save result by csv file,
                             it is saved in the  same path as the output file
         max_mismatch      : the maximum value of number of mismatch
@@ -66,6 +92,8 @@ def analysis_cas_offinder_result(
     output:
         DataFrame, and csv file
     '''
+    if max_mismatch < 2:
+        max_mismatch = 4
     # load cas-offinder output file
     header = ['query','chr','site','seq','direction','mismatch']
     data_type = {
@@ -106,7 +134,7 @@ def analysis_cas_offinder_result(
         query_mismatch_info_list.append(_tmp_list)
     query_mismatch_info_list = np.array(query_mismatch_info_list)
     # calculate cg - at ratio
-    query_cg_at_ratio_list = gc_at_classify_encoder.calc_batch_seq_gc_at_ratio(query_set)
+    query_cg_at_ratio_list = gc_at_classify_encoder.calc_batch_seq_gc_at_ratio(query_list)
 
     # concatenate all of data
     analysis_result_list = np.concatenate(
@@ -123,16 +151,66 @@ def analysis_cas_offinder_result(
             'AT_rate',
             #'mis_0','mis_1','mis_2','mis_3','mis_4'
     ] + [f"mis_{i}" for i in range(max_mismatch+1)]
+    result_columns_dtype = dict([[f"mis_{i}",'uint32'] for i in range(max_mismatch+1)])
     # make DataFrame
     query_info_df = pd.DataFrame(
         analysis_result_list,
         columns=columns_header,
     )
+    query_info_df = query_info_df.astype(result_columns_dtype)
+    query_info_df = query_info_df.sort_values(by=['Type_code'])
 
     # save csv file
     if save_csv:
         file_path = Path(output_file_path).parent
-        query_info_df.to_csv(f'{file_path}/query_analysis.csv',index=False)
+        query_info_df.to_csv(f'{file_path}/query_analysis_{job_name}.csv',index=False)
+
+    # selecting the closest sequence from ref
+    if save_csv:
+        closest_results_df = query_info_df[(query_info_df['mis_0']>0)|(query_info_df['mis_1']>0)]
+        closest_results_df.to_csv(f"{file_path}/query_analysis_closest_{job_name}.csv",index=False)
 
     return query_info_df
+    
+
+
+def check_opencl_device():
+    cas_offinder_command = subprocess.Popen(
+        ["cas-offinder"],
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True
+    )
+    output, log = cas_offinder_command.communicate()
+    avail_device_log = output[output.find("Available device list:"):]
+    avail_cpu = True if avail_device_log.find('CPU') != -1 else False
+    avail_gpu = True if avail_device_log.find('GPU') != -1 else False
+    assert avail_cpu or avail_gpu, f"Check available device or cas-offinder"
+    if avail_gpu:
+        return 'G'
+    else:
+        return 'C'
+
+
+def make_log(log_path, log_name):
+    import logging
+    from logging.handlers import RotatingFileHandler
+    logger = logging.getLogger(log_name)
+    logger.setLevel(logging.DEBUG)
+    Path(log_path).parent.mkdir(parents=True, exist_ok=True)
+    file_handler = RotatingFileHandler(
+        filename = log_path,
+        mode = 'a',
+        maxBytes=10*1024*1024,
+        backupCount=2,
+    )
+    formatter = logging.Formatter(
+        fmt= "%(asctime)s - %(levelname)s - %(name)s - %(message)s"
+    )
+    file_handler.setLevel(logging.DEBUG)
+    file_handler.setFormatter(formatter)
+    logger.addHandler(file_handler)
+    return logger
+
     
