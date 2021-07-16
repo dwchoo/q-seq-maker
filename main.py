@@ -56,12 +56,12 @@ def query_seq_generate(
 
 
 if __name__=="__main__":
-    #pass
+    num_set = 10
     query_seq_generate(
-        num_set = 10,
+        num_set = num_set,
         threshold= 7,
-        job_name= "main_test",
-        path = './jupyter_notebook',
+        job_name= f"generate_{num_set}_set",
+        path = './data',
         method= generate_8_nC2_data,
         verbose=True
     )

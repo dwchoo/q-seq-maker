@@ -37,6 +37,9 @@ class generate_mismatch_data:
         log_file_path = f"{job_path}/log/{job_name}.log"
         if log:
             logger = self.__seq_generate_log(log_file_path,'Query')
+            logger.info(f"Job information")
+            logger.info(f"{job_name}, path : {job_path}")
+            logger.info(f"num_set : {num_set},  threshold : {threshold},  equal : {equal},  method : {type(self).__name__}")
         else:
             logger = None
             

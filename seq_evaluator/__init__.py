@@ -1,2 +1,2 @@
 #seq_evaluator/__init__.py
-__all__ = ['evaluator']
+__all__ = ['evaluator', 'analysis']
