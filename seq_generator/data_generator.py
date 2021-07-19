@@ -3,7 +3,8 @@ from seq_generator.mismatch_generator import *
 from seq_evaluator.evaluator import *
 
 import numpy as np
-
+import pathlib
+from pathlib import Path
 
 
 class generate_mismatch_data:
@@ -33,12 +34,14 @@ class generate_mismatch_data:
             query_set  : [ACGT,AACG ...]
         '''
         job_path = self.__return_job_folder_path_N_make(job_name=job_name, path=save_path)
+        absolute_path = f"{Path().absolute()}"
         save_file_path = f"{job_path}/query_{job_name}.txt"
         log_file_path = f"{job_path}/log/{job_name}.log"
         if log:
             logger = self.__seq_generate_log(log_file_path,'Query')
             logger.info(f"Job information")
-            logger.info(f"{job_name}, path : {job_path}")
+            logger.info(f"Job name: {job_name}")
+            logger.info(f"path : {absolute_path}/{job_path}")
             logger.info(f"num_set : {num_set},  threshold : {threshold},  equal : {equal},  method : {type(self).__name__}")
         else:
             logger = None
@@ -145,4 +148,17 @@ class generate_8_nC2_data(generate_mismatch_data):
         )
         self.mis_1_data = self.generate_one_mis_data(self.query_data)
         self.mis_2_data = self.generate_nC2_data(self.query_data)
-        
+ 
+
+class generate_12_data(generate_mismatch_data):
+    def __init__(self, num_set=1, threshold=7, **kwargs):
+        self.num_set = num_set
+        self.query_data = self.generate_query_seq_data(
+            num_set = self.num_set,
+            threshold= threshold,
+            equal=True,
+            **kwargs
+        )
+        #self.mis_1_data = self.generate_one_mis_data(self.query_data)
+        #self.mis_2_data = self.generate_nC2_data(self.query_data)
+               

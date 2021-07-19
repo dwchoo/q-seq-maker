@@ -1,10 +1,13 @@
 from seq_generator.query_generator import *
 from seq_generator.mismatch_generator import *
 from seq_generator.data_generator import *
+from seq_generator import data_generator
 from job_script.cas_offinder_job import make_cas_offinder_script, run_cas_offinder, analysis_cas_offinder_result
 from job_script.cas_offinder_job import *
 
 import numpy as np
+import argparse
+import pyclbr
 
 
 
@@ -52,16 +55,78 @@ def query_seq_generate(
     if verbose: print('Job Finished')
     return result_df
 
+# Get class by name
+class double_mismatch_method:
+    @classmethod
+    def return_method_list(cls,):
+        module_name = 'seq_generator.data_generator'
+        module_info = pyclbr.readmodule(module_name)
+        method_list = list(module_info.keys())
+        return method_list
+
+    @classmethod
+    def return_method_class(cls,method='generate_12_data'):
+        method_list = cls.return_method_list()
+        if method in method_list:
+            _class = getattr(data_generator,method)
+        else:
+            assert False, f"check method, {method}, {method_list}"
+        return _class
+    
+
+def main():
+    parser = argparse.ArgumentParser(description="Q-seq-maker tutorial")
+
+    #Arguments
+    parser.add_argument(
+        "--num_set","-n", type=int, default=10,
+        help="Number of sequence set")
+    parser.add_argument(
+        "--threshold","-t", type=int, default=7,
+        help="Edit distance threshold")
+    parser.add_argument(
+        "--path","-p", type=str, default='./data',
+        help="Path to save data")
+    parser.add_argument(
+        "--method","-m", type=str, default=generate_12_data.__name__,
+        help=f"Method of generating on-target sequence\n{double_mismatch_method.return_method_list()}")
+    parser.add_argument(
+        "--verbose",'-v', action="store_true", default=True,
+        help="Verbose")
+    
+    args = parser.parse_args()
+
+    if args.verbose:
+        verbose = True
+    else:
+        verbose = False
+
+    num_set   = args.num_set
+    threshold = args.threshold
+    method    = double_mismatch_method.return_method_class(args.method)
+    job_name  = f"generate_{num_set}_{method.__name__}"
+    path      = args.path
+
+    query_seq_generate(
+            num_set = num_set,
+            threshold= threshold,
+            job_name= job_name,
+            path = path,
+            method= method,
+            verbose=verbose,
+        )
+
 
 
 
 if __name__=="__main__":
-    num_set = 10
-    query_seq_generate(
-        num_set = num_set,
-        threshold= 7,
-        job_name= f"generate_{num_set}_set",
-        path = './data',
-        method= generate_8_nC2_data,
-        verbose=True
-    )
+    main()
+    #num_set = 2000
+    #query_seq_generate(
+    #    num_set = num_set,
+    #    threshold= 6,
+    #    job_name= f"generate_{num_set}_set",
+    #    path = './data',
+    #    method= generate_12_data,
+    #    verbose=True
+    #)
