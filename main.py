@@ -8,6 +8,7 @@ from job_script.cas_offinder_job import *
 import numpy as np
 import argparse
 import pyclbr
+import sys
 
 
 
@@ -79,7 +80,7 @@ def main():
 
     #Arguments
     parser.add_argument(
-        "--num_set","-n", type=int, default=10,
+        "--num_set","-n", type=int, required=True,
         help="Number of sequence set")
     parser.add_argument(
         "--threshold","-t", type=int, default=7,
@@ -94,6 +95,11 @@ def main():
         "--verbose",'-v', action="store_true", default=True,
         help="Verbose")
     
+    # Check no arguments
+    if len(sys.argv)==1:
+        parser.print_help()
+        parser.exit()
+
     args = parser.parse_args()
 
     if args.verbose:

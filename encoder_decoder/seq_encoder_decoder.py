@@ -251,6 +251,6 @@ class query_type_code_encoder:
         elif np.less(*gc_at_sum):
             return 2
         elif np.equal(*gc_at_sum):
-            return 0
+            return 3
         else:
             return None
