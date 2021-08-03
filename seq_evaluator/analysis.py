@@ -39,3 +39,4 @@ def calc_mismatch_each_position(query, mismatch_list):
     mismatch_calc = np.clip(mismatch_one_hot_list - query_one_hot,0,None)
     mismatch_num_pos = np.sum(mismatch_calc, axis=0)
     return mismatch_num_pos
+

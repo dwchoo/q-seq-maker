@@ -94,6 +94,96 @@ class one_hot_decoder:
         return seq
 
 
+class mismatch_calculator:
+    prime_convert_main = np.array([1,2,3,5], dtype=np.int8)
+    prime_convert_sub  = np.array([7,11,13,17], dtype=np.int8)
+
+    prime_main_encoder_dict = {
+        'A' : 1,
+        'a' : 1,
+        'C' : 2,
+        'c' : 2,
+        'G' : 3,
+        'g' : 3,
+        'T' : 5,
+        't' : 5,
+        
+        'N' : 0,
+        'n' : 0, #'n'????
+    }
+
+    prime_sub_encoder_dict = {
+        'A' : 7,
+        'a' : 7,
+        'C' : 11,
+        'c' : 11,
+        'G' : 13,
+        'g' : 13,
+        'T' : 17,
+        't' : 17,
+        
+        'N' : 0,
+        'n' : 0, #'n'????
+    }
+    
+    prime_multi_encoder_dict = {
+        7  : None,
+        11 : 'A>C',
+        13 : 'A>G',
+        17 : 'A>T',
+        14 : 'C>A',
+        22 : None,
+        26 : 'C>G',
+        34 : 'C>T',
+        21 : 'G>A',
+        33 : 'G>C',
+        39 : None,
+        51 : 'G>T',
+        35 : 'T>A',
+        55 : 'T>C',
+        65 : 'T>G',
+        85 : None,
+        
+        0  : None, # N,n
+    }
+
+    @classmethod
+    def seq_prime_encoder(cls, query, type_dict):
+        prime_encoded_query = list(map(type_dict.get,query))
+        prime_encoded_query = np.array(prime_encoded_query,dtype=np.int8)
+        return prime_encoded_query
+
+    @classmethod
+    def __seq_mismatch_calculator(cls, query_1, query_2):
+        query_1_prime_encoded = cls.seq_prime_encoder(query_1, cls.prime_main_encoder_dict)
+        query_2_prime_encoded = cls.seq_prime_encoder(query_2, cls.prime_sub_encoder_dict)
+
+        query_multiply = query_1_prime_encoded * query_2_prime_encoded
+        mismatch_list = list(map(cls.prime_multi_encoder_dict.get,query_multiply))
+
+        mismatch_info_list = []
+        for index, _info in enumerate(mismatch_list):
+            if _info:
+                _info_str = f"{index}:{_info}"
+                mismatch_info_list.append(_info_str)
+        return mismatch_info
+
+    @classmethod
+    def seq_mismatch_info_list(cls, query_1, query_2):
+        mismatch_info_list = cls.__seq_mismatch_calculator(query_1, query_2)
+        return mismatch_info_list
+
+    @classmethod
+    def seq_mismatch_info_str(cls, query_1, query_2):
+        mismatch_info_list = cls.__seq_mismatch_calculator(query_1, query_2)
+        mismatch_info_str = ','.join(mismatch_info_list)
+        return mismatch_info_str
+
+
+
+
+
+
 # ACCCGT -> 122234
 def acgt2num(seq):
     '''
