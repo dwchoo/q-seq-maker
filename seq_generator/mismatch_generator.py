@@ -4,10 +4,10 @@
 import numpy as np
 import editdistance as edis
 
-from encoder_decoder.seq_encoder_decoder import *
+#from encoder_decoder.seq_encoder_decoder import *
+from encoder_decoder import seq_encoder_decoder
 from seq_generator.query_generator import *
 from seq_evaluator.evaluator import *
-
 
 
 # nC2 method
@@ -24,7 +24,7 @@ def double_nC2_seq_list(seq, first_change=True):
     assert not isinstance(seq[0], (int,float,complex))
     if type(seq) == str:
         seq = list(seq)
-    seq_num = acgt2num(seq)
+    seq_num = seq_encoder_decoder.acgt2num(seq)
     acgt_num_list = np.arange(1,5)
     mis2_seq_list = []
     for pos_1 in range(len(seq_num)):
@@ -37,13 +37,14 @@ def double_nC2_seq_list(seq, first_change=True):
                 _fix_point    = pos_1
             _change_point_NT = seq_num[_change_point]
             _fix_point_NT    = seq_num[_fix_point]
-            _fix_NT_change_list = np.delete(acgt_num_list,_fix_point_NT-1)
-            _fix_point_m_NT = _fix_NT_change_list[np.random.randint(len(_fix_NT_change_list))]
+            _fix_point_m_NT = make_mismatch.change_AT_CG(_fix_point_NT)
+            #_fix_NT_change_list = np.delete(acgt_num_list,_fix_point_NT-1)
+            #_fix_point_m_NT = _fix_NT_change_list[np.random.randint(len(_fix_NT_change_list))]
             for _change_point_m_NT in np.delete(acgt_num_list,_change_point_NT -1):
                 _tmp_seq_num = np.array(seq_num).copy()
                 _tmp_seq_num[_change_point] = _change_point_m_NT
                 _tmp_seq_num[_fix_point]    = _fix_point_m_NT
-                mis2_seq_list.append(num2acgt(_tmp_seq_num))
+                mis2_seq_list.append(seq_encoder_decoder.num2acgt(_tmp_seq_num))
     return np.array(mis2_seq_list)
 
 
@@ -60,14 +61,14 @@ def distance_based_change_diff_length_list(seq, length, num):
     assert not isinstance(seq[0], (int,float,complex))
     assert len(seq) > length, f"Length has to less than seq length, length:{length}"
     assert len(seq) >= length + num -1, f"Request too many numbers of seq, max num : {len(seq)-length+1}"
-    seq_num = acgt2num(seq)
-    change_rule_dict = {
-        1 : [2,3], #A -> C,G
-        2 : [1,4], #C -> A,T
-        3 : [1,4], #G -> A,T
-        4 : [2,3], #T -> C,G
-        5 : [1,2,3,4],
-    }
+    seq_num = seq_encoder_decoder.acgt2num(seq)
+    #change_rule_dict = {
+    #    1 : [2,3], #A -> C,G
+    #    2 : [1,4], #C -> A,T
+    #    3 : [1,4], #G -> A,T
+    #    4 : [2,3], #T -> C,G
+    #    5 : [1,2,3,4],
+    #}
     bar_length = length
     choose_num = num
     seq_length = len(seq_num)
@@ -78,9 +79,10 @@ def distance_based_change_diff_length_list(seq, length, num):
         _tmp_seq = np.array(seq_num).copy()
         for i in [_pos,_pos+bar_length-1]:
             _pos_NT = seq_num[i]
-            _m_NT_list = change_rule_dict.get(_pos_NT,[1,2,3,4])
-            _tmp_seq[i] = _m_NT_list[np.random.randint(len(_m_NT_list))]
-        mis2_seq_list.append(num2acgt(_tmp_seq))
+            _tmp_seq[i] = make_mismatch.change_AT_CG(_pos_NT)
+            #_m_NT_list = change_rule_dict.get(_pos_NT,[1,2,3,4])
+            #_tmp_seq[i] = _m_NT_list[np.random.randint(len(_m_NT_list))]
+        mis2_seq_list.append(seq_encoder_decoder.num2acgt(_tmp_seq))
     return np.array(mis2_seq_list)
 
 
@@ -94,14 +96,14 @@ def distance_based_change_same_length_list(seq,num):
     '''
     assert not isinstance(seq[0], (int,float,complex))
     assert num <= 9, f"Request too many number of seq, max : 9"
-    seq_num = acgt2num(seq)
-    change_rule_dict = {
-        1 : [2,3], #A -> C,G
-        2 : [1,4], #C -> A,T
-        3 : [1,4], #G -> A,T
-        4 : [2,3], #T -> C,G
-        5 : [1,2,3,4],
-    }
+    seq_num = seq_encoder_decoder.acgt2num(seq)
+    #change_rule_dict = {
+    #    1 : [2,3], #A -> C,G
+    #    2 : [1,4], #C -> A,T
+    #    3 : [1,4], #G -> A,T
+    #    4 : [2,3], #T -> C,G
+    #    5 : [1,2,3,4],
+    #}
     acgt_list = np.arange(1,4+1)
     bar_length = len(seq_num)
     choose_num = num
@@ -110,13 +112,15 @@ def distance_based_change_same_length_list(seq,num):
     
     _pos_1_NT = seq_num[0]
     _pos_2_NT = seq_num[-1]
-    for _mut_1 in np.delete(acgt_list,_pos_1_NT -1):
-        for _mut_2 in np.delete(acgt_list,_pos_2_NT -1):
+    #for _mut_1 in np.delete(acgt_list,_pos_1_NT -1):
+    for _mut_1 in make_mismatch.change_AT_CG_list(_pos_1_NT):
+        #for _mut_2 in np.delete(acgt_list,_pos_2_NT -1):
+        for _mut_2 in make_mismatch.change_AT_CG_list(_pos_2_NT):
             _tmp_seq = np.array(seq_num).copy()
             _tmp_seq[0]  = _mut_1
             _tmp_seq[-1] = _mut_2
-            mis2_seq_list.append(num2acgt(_tmp_seq))
-    mis2_seq_list = np.random.choice(np.array(mis2_seq_list),num,replace=False)
+            mis2_seq_list.append(seq_encoder_decoder.num2acgt(_tmp_seq))
+    mis2_seq_list = np.random.choice(np.array(mis2_seq_list),choose_num,replace=False)
     return mis2_seq_list
 
 def distance_based_change_list(seq, length, num):
@@ -167,7 +171,7 @@ def one_mismatch_seq_list(seq):
     '''
     if type(seq) == str:
         seq = list(seq)
-    seq_num = acgt2num(seq)
+    seq_num = seq_encoder_decoder.acgt2num(seq)
     acgt_num_list = np.arange(1,5)
     mis1_seq_list = []
     for pos in range(len(seq_num)):
@@ -175,6 +179,122 @@ def one_mismatch_seq_list(seq):
         for _change_point_m_NT in np.delete(acgt_num_list,_pos_NT-1):
             _tmp_seq = np.array(seq_num).copy()
             _tmp_seq[pos] = _change_point_m_NT
-            mis1_seq_list.append(num2acgt(_tmp_seq))
+            mis1_seq_list.append(seq_encoder_decoder.num2acgt(_tmp_seq))
     mis1_seq_list = np.array(mis1_seq_list)
     return mis1_seq_list
+
+
+# change base
+class make_mismatch:
+    '''
+        Convert base to make mismatch
+        A : 1
+        C : 2
+        G : 3
+        T : 4
+    '''
+    change_rule_random = {
+        1 : np.array([2,3,4],dtype=np.int8), #A -> C,G,T
+        2 : np.array([1,3,4],dtype=np.int8), #C -> A,G,T
+        3 : np.array([1,2,4],dtype=np.int8), #G -> A,C,T
+        4 : np.array([1,2,3],dtype=np.int8), #T -> A,C,G
+    }
+    change_rule_AT_CG = {
+        1 : np.array([2,3],dtype=np.int8), #A -> C,G
+        2 : np.array([1,4],dtype=np.int8), #C -> A,T
+        3 : np.array([1,4],dtype=np.int8), #G -> A,T
+        4 : np.array([2,3],dtype=np.int8), #T -> C,G
+    }
+
+    change_rule_necleobase = {
+        1 : np.array([3],dtype=np.int8), #A -> G
+        2 : np.array([4],dtype=np.int8), #C -> T
+        3 : np.array([1],dtype=np.int8), #G -> A
+        4 : np.array([2],dtype=np.int8), #T -> C
+    }
+    
+    @classmethod
+    def __change_base(cls, letter_num, rule_dict):
+        '''
+            default change funciton
+        '''
+        letter_num = int(letter_num)
+        changeable_list = rule_dict.get(
+            letter_num,
+            np.array([1,2,3,4],dtype=np.int8)
+        )
+        random_num = np.random.randint(len(changeable_list))
+        return changeable_list[random_num]
+
+    @classmethod
+    def __change_base_list(cls, letter_num, rule_dict):
+        '''
+            default change funciton
+        '''
+        letter_num = int(letter_num)
+        changeable_list = rule_dict.get(
+            letter_num,
+            np.array([1,2,3,4],dtype=np.int8)
+        )
+        return changeable_list
+
+    # Random
+    @classmethod
+    def change_random(cls, letter_num):
+        '''
+            random change
+        '''
+        return cls.__change_base(letter_num, cls.change_rule_random)
+
+    @classmethod
+    def change_random_list(cls, letter_num):
+        '''
+            random change
+        '''
+        return cls.__change_base_list(letter_num, cls.change_rule_random)
+
+    # AT-CG pairing
+    @classmethod
+    def change_AT_CG(cls, letter_num):
+        '''
+            AT -> CG
+            CG -> AT
+        '''
+        return cls.__change_base(letter_num, cls.change_rule_AT_CG)
+
+    @classmethod
+    def change_AT_CG_list(cls, letter_num):
+        '''
+            AT -> CG
+            CG -> AT
+        '''
+        return cls.__change_base_list(letter_num, cls.change_rule_AT_CG)
+
+    # nucleobase
+    @classmethod
+    def change_nucleobase(cls, letter_num):
+        '''
+            A <-> G
+            C <-> T
+        '''
+        return cls.__change_base(letter_num, cls.change_rule_necleobase)
+
+    @classmethod
+    def change_nucleobase_list(cls, letter_num):
+        '''
+            A <-> G
+            C <-> T
+        '''
+        return cls.__change_base_list(letter_num, cls.change_rule_necleobase)
+
+
+    
+
+
+
+
+
+
+
+
+

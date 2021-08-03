@@ -148,6 +148,7 @@ class generate_8_nC2_data(generate_mismatch_data):
         )
         self.mis_1_data = self.generate_one_mis_data(self.ontarget_data)
         self.mis_2_data = self.generate_nC2_data(self.ontarget_data)
+        self.mis_2_dis_data = self.generate_distance_based_data(self.ontarget_data)
  
 
 class generate_12_data(generate_mismatch_data):

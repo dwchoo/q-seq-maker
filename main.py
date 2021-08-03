@@ -33,7 +33,7 @@ def query_seq_generate(
         job_name = job_name,
         save_path = path,
     )
-    if verbose: print("Finish generate on-target.\nsave path = {job_path}")
+    if verbose: print(f"Finish generate on-target.\nsave path = {job_path}")
     if verbose: print("Generate cas-offinder script")
     make_cas_offinder_script(
         query_seq_list = data.ontarget_data,
@@ -54,7 +54,7 @@ def query_seq_generate(
         max_mismatch     = 4,
         slice_length_list= [7,7,6],
     )
-    if verbose: print('{job_name} Finished')
+    if verbose: print(f'{job_name} Finished')
     return result_df
 
 # Get class by name
