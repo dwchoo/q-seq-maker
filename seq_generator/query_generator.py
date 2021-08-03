@@ -13,7 +13,7 @@ def random_seq(length=20, column=4):
 # generate condition sequence
 
 # genearte list of seq [A,C,G,T,T...]
-def generate_query_seq_set_list(gen_num_each=1, concate=False,equal=True,join=True):
+def generate_ontarget_seq_set_list(gen_num_each=1, concate=False,equal=True,join=True):
     '''
     input :
         gen_num_each : number of sequence set
@@ -23,16 +23,16 @@ def generate_query_seq_set_list(gen_num_each=1, concate=False,equal=True,join=Tr
     output : [ACGT,CGGT, ...] or [[ACGT,CCA,..],[...],...]
     '''
     _seq_type_list = generate_seq_type_list(equal)
-    query_list = []
+    ontarget_list = []
     for _seq_type in _seq_type_list:
         _tmp_list = []
         for i in range(gen_num_each):
             _tmp_list.append(convert_type2seq(_seq_type,join))
-        query_list.append(_tmp_list)
+        ontarget_list.append(_tmp_list)
     if concate:
-        result = np.concatenate(query_list)
+        result = np.concatenate(ontarget_list)
     else:
-        result = np.array(query_list)
+        result = np.array(ontarget_list)
     return result
 
 

@@ -1,6 +1,6 @@
-from seq_generator.query_generator import *
+from seq_generator.query_generator import generate_ontarget_seq_set_list
 from seq_generator.mismatch_generator import *
-from seq_evaluator.evaluator import *
+from seq_evaluator.evaluator import divide_seq_edit_distance
 
 import numpy as np
 import pathlib
@@ -14,31 +14,31 @@ class generate_mismatch_data:
     nC2 mismatch
     distance based mismatch
     '''
-    def generate_query_seq_data(self,
+    def generate_ontarget_seq_data(self,
         num_set,
         threshold,
         equal,
         log=True,
-        job_name='query_seq',
+        job_name='ontarget_seq',
         save_path = '.'
     ):
         '''
         input:
-            num_set    : number of query set to generate
+            num_set    : number of ontarget set to generate
             threshold  : edit distance threshold 
             equal      : True, if last group has equal case
             log        : True, if save log
             job_name   : string, job name
             save_path  : save file path
         return:
-            query_set  : [ACGT,AACG ...]
+            ontarget_set  : [ACGT,AACG ...]
         '''
         job_path = self.__return_job_folder_path_N_make(job_name=job_name, path=save_path)
         absolute_path = f"{Path().absolute()}"
-        save_file_path = f"{job_path}/query_{job_name}.txt"
+        save_file_path = f"{job_path}/ontarget_{job_name}.txt"
         log_file_path = f"{job_path}/log/{job_name}.log"
         if log:
-            logger = self.__seq_generate_log(log_file_path,'Query')
+            logger = self.__seq_generate_log(log_file_path,'Ontarget')
             logger.info(f"Job information")
             logger.info(f"Job name: {job_name}")
             logger.info(f"path : {absolute_path}/{job_path}")
@@ -47,43 +47,43 @@ class generate_mismatch_data:
             logger = None
             
         if equal:
-            num_query = num_set*12
+            num_ontarget = num_set*12
         else:
-            num_query = num_set*8
+            num_ontarget = num_set*8
             
-        query_set = []
+        ontarget_set = []
         while 1:
-            previous_query_mass = np.array(query_set).copy()
-            new_query_mass = generate_query_seq_set_list(1, concate=True, equal=equal,join=True)
-            pass_query_mass, discard_query_mass, _ = divide_seq_edit_distance(
-                previous_query_mass,
-                new_query_mass,
+            previous_ontarget_mass = np.array(ontarget_set).copy()
+            new_ontarget_mass = generate_ontarget_seq_set_list(1, concate=True, equal=equal,join=True)
+            pass_ontarget_mass, discard_ontarget_mass, _ = divide_seq_edit_distance(
+                previous_ontarget_mass,
+                new_ontarget_mass,
                 threshold,
             )
-            if len(discard_query_mass) == 0:
-                query_set = pass_query_mass.copy()
+            if len(discard_ontarget_mass) == 0:
+                ontarget_set = pass_ontarget_mass.copy()
                 if log:
-                    logger.info(f"{len(pass_query_mass)}/{num_query} - save file : {save_file_path}")
-                    self.__save_sequence(pass_query_mass,save_file_path)
+                    logger.info(f"{len(pass_ontarget_mass)}/{num_ontarget} - save file : {save_file_path}")
+                    self.__save_sequence(pass_ontarget_mass,save_file_path)
             else:
-                query_set = previous_query_mass.copy()
-            if len(query_set) >= num_query:
-                pass_tmp, discard_tmp, _ = divide_seq_edit_distance(None, query_set, threshold)
+                ontarget_set = previous_ontarget_mass.copy()
+            if len(ontarget_set) >= num_ontarget:
+                pass_tmp, discard_tmp, _ = divide_seq_edit_distance(None, ontarget_set, threshold)
                 if log:
                     logger.info(f"FINISH pass_num : {len(pass_tmp)}, discard_num : {len(discard_tmp)}")
                 assert len(discard_tmp) == 0, f"discard seq num: {len(discard_tmp)}"
-                return query_set
+                return ontarget_set
     
-    def generate_one_mis_data(self, query_list):
-        data_one_mis_list = np.array(list(map(one_mismatch_seq_list,query_list)))
+    def generate_one_mis_data(self, ontarget_list):
+        data_one_mis_list = np.array(list(map(one_mismatch_seq_list,ontarget_list)))
         return data_one_mis_list
     
-    def generate_nC2_data(self, query_list):
-        data_double_nC2_list = np.array(list(map(double_nC2_seq_list,query_list)))
+    def generate_nC2_data(self, ontarget_list):
+        data_double_nC2_list = np.array(list(map(double_nC2_seq_list,ontarget_list)))
         return data_double_nC2_list
     
-    def generate_distance_based_data(self,query_list):
-        data_double_distance_based_list = np.array(list(map(generate_distance_based_seq_list,query_list)))
+    def generate_distance_based_data(self,ontarget_list):
+        data_double_distance_based_list = np.array(list(map(generate_distance_based_seq_list,ontarget_list)))
         return data_double_distance_based_list
     
     def data_concatenate(self,*args):
@@ -125,13 +125,13 @@ class generate_mismatch_data:
         logger.addHandler(file_handler)
         return logger
     
-    def __save_sequence(self, seq_data, file_name='query_seq.txt'):
+    def __save_sequence(self, seq_data, file_name='ontarget_seq.txt'):
         with open(file_name, 'w') as f:
             for _seq in seq_data:
                 f.write(f"{_seq}\n")
     
     @classmethod
-    def read_sequence_tolist(cls, file_name='query_seq.txt'):
+    def read_sequence_tolist(cls, file_name='ontarget_seq.txt'):
         with open(file_name, 'r') as f:
             data = f.read().splitlines()
         return data
@@ -140,25 +140,25 @@ class generate_mismatch_data:
 class generate_8_nC2_data(generate_mismatch_data):
     def __init__(self, num_set=1, threshold=7, **kwargs):
         self.num_set = num_set
-        self.query_data = self.generate_query_seq_data(
+        self.ontarget_data = self.generate_ontarget_seq_data(
             num_set = self.num_set,
             threshold= threshold,
             equal=False,
             **kwargs
         )
-        self.mis_1_data = self.generate_one_mis_data(self.query_data)
-        self.mis_2_data = self.generate_nC2_data(self.query_data)
+        self.mis_1_data = self.generate_one_mis_data(self.ontarget_data)
+        self.mis_2_data = self.generate_nC2_data(self.ontarget_data)
  
 
 class generate_12_data(generate_mismatch_data):
     def __init__(self, num_set=1, threshold=7, **kwargs):
         self.num_set = num_set
-        self.query_data = self.generate_query_seq_data(
+        self.ontarget_data = self.generate_ontarget_seq_data(
             num_set = self.num_set,
             threshold= threshold,
             equal=True,
             **kwargs
         )
-        #self.mis_1_data = self.generate_one_mis_data(self.query_data)
-        #self.mis_2_data = self.generate_nC2_data(self.query_data)
+        #self.mis_1_data = self.generate_one_mis_data(self.ontarget_data)
+        #self.mis_2_data = self.generate_nC2_data(self.ontarget_data)
                

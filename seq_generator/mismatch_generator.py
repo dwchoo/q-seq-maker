@@ -1,9 +1,13 @@
+'''
+    Genrate mismatch sequence
+'''
+import numpy as np
+import editdistance as edis
+
 from encoder_decoder.seq_encoder_decoder import *
 from seq_generator.query_generator import *
 from seq_evaluator.evaluator import *
 
-import numpy as np
-import editdistance as edis
 
 
 # nC2 method
