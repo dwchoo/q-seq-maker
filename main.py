@@ -23,9 +23,9 @@ def query_seq_generate(
     job_path = f"{path}/{job_name}"
     cas_offinder_script_path = f"{job_path}/run_{job_name}_script.sh"
     output_file_path = f"{job_path}/{job_name}_output.txt"
-    query_file_path = f"{job_path}/query_{job_name}.txt"
+    ontarget_file_path = f"{job_path}/ontarget_{job_name}.txt"
 
-    if verbose: print("Job Start!!")
+    if verbose: print(f"{job_name} Start!!")
     data = method(
         num_set = num_set,
         threshold= threshold,
@@ -33,9 +33,10 @@ def query_seq_generate(
         job_name = job_name,
         save_path = path,
     )
-    if verbose: print("Finish generate query.\nGenerate cas-offinder script")
+    if verbose: print("Finish generate on-target.\nsave path = {job_path}")
+    if verbose: print("Generate cas-offinder script")
     make_cas_offinder_script(
-        query_seq_list = data.query_data,
+        query_seq_list = data.ontarget_data,
         job_name = job_name,
         job_path = job_path,
     )
@@ -47,13 +48,13 @@ def query_seq_generate(
     if verbose: print("Finish cas-offinder.\nStart to analysis results")
     result_df = analysis_cas_offinder_result(
         output_file_path = output_file_path,
-        query_text_path  = query_file_path,
+        query_text_path  = ontarget_file_path,
         job_name         = job_name,
         save_csv         = True,
         max_mismatch     = 4,
         slice_length_list= [7,7,6],
     )
-    if verbose: print('Job Finished')
+    if verbose: print('{job_name} Finished')
     return result_df
 
 # Get class by name
@@ -79,6 +80,9 @@ def main():
     parser = argparse.ArgumentParser(description="Q-seq-maker tutorial")
 
     #Arguments
+    parser.add_argument(
+        "--name",type=str,default=None,
+        help="Job name")
     parser.add_argument(
         "--num_set","-n", type=int, required=True,
         help="Number of sequence set")
@@ -107,10 +111,15 @@ def main():
     else:
         verbose = False
 
+    if args.name:
+        _job_name = f"{args.name}_"
+    else:
+        _job_name = ''
+
     num_set   = args.num_set
     threshold = args.threshold
     method    = double_mismatch_method.return_method_class(args.method)
-    job_name  = f"generate_{num_set}_{method.__name__}"
+    job_name  = f"{_job_name}{num_set}_{method.__name__}" 
     path      = args.path
 
     query_seq_generate(
