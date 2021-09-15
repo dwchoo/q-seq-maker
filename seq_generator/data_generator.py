@@ -1,8 +1,10 @@
 from seq_generator.query_generator import generate_ontarget_seq_set_list
 from seq_generator.mismatch_generator import *
 from seq_evaluator.evaluator import divide_seq_edit_distance
+from encoder_decoder.seq_encoder_decoder import mismatch_calculator
 
 import numpy as np
+import pandas as pd
 import pathlib
 from pathlib import Path
 
@@ -129,12 +131,44 @@ class generate_mismatch_data:
         with open(file_name, 'w') as f:
             for _seq in seq_data:
                 f.write(f"{_seq}\n")
+
+    def __return_mismatch_data_csv(self, ontarget_list, offtarget_list_2d):
+        df_data_list = []
+        for _ontarget, _offtarget_list in zip(ontarget_list, offtarget_list_2d):
+            for _offtarget in _offtarget_list:
+                _mismatch_num = mismatch_calculator.seq_mismatch_count(_ontarget, _offtarget)
+                _mismatch_info = mismatch_calculator.seq_mismatch_info_str(_ontarget, _offtarget)
+                df_data_list.append([_ontarget,_offtarget,_mismatch_num, _mismatch_info])
+
+        df_columns = ['on-target','off-target','number of mismatch','mismatch info']
+        df_dtype = {
+            'on-target' : 'category',' off-target' : 'category',
+            'number of mismatch' : 'int8',}
+        df_data = pd.DataFrame(
+            df_data_list,
+            columns = df_columns,
+        ).astype(df_dtype)
+        return df_data
+
+    def __save_mismatch_data_csv(self,ontarget_list, offtarget_list_2d, file_path):
+        df_data = self.__return_mismatch_data_csv(ontarget_list, offtarget_list_2d)
+        df_data.to_csv(f'{file_path}.csv', index=False)
+
     
     @classmethod
-    def read_sequence_tolist(cls, file_name='ontarget_seq.txt'):
+    def read_sequence_tolist(cls, file_name='ontarget_seq.txt',check_file=True):
         with open(file_name, 'r') as f:
             data = f.read().splitlines()
-        return data
+        if check_file is False:
+            return data
+        else:
+            new_data_list = []
+            for _line in data:
+                if '#' in _line:
+                    continue
+                else:
+                    new_data_list.append(_line.upper())
+            return new_data_list
 
 
 class generate_8_nC2_data(generate_mismatch_data):

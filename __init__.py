@@ -2,4 +2,4 @@
 '''
 q-seq-maker
 '''
-__all__ = ['main']
+__all__ = ['main', 'analyser']

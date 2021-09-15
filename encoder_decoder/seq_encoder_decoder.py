@@ -95,8 +95,6 @@ class one_hot_decoder:
 
 
 class mismatch_calculator:
-    prime_convert_main = np.array([1,2,3,5], dtype=np.int8)
-    prime_convert_sub  = np.array([7,11,13,17], dtype=np.int8)
 
     prime_main_encoder_dict = {
         'A' : 1,
@@ -149,36 +147,104 @@ class mismatch_calculator:
 
     @classmethod
     def seq_prime_encoder(cls, query, type_dict):
+        '''
+        args:
+            query       : query sequence, ACGTAAA
+            type_dict   : convert type dictionary, prime main or sub
+        return:
+            prime_encoded_query : encoded sequence, [1,2,3,4,1,1,1]
+        '''
         prime_encoded_query = list(map(type_dict.get,query))
         prime_encoded_query = np.array(prime_encoded_query,dtype=np.int8)
         return prime_encoded_query
 
     @classmethod
-    def __seq_mismatch_calculator(cls, query_1, query_2):
+    def __seq_mismatch_info_list(cls, query_1, query_2):
+        '''
+        args:
+            query_1     : query sequence, ACGT
+            query_2     : query sequence, AAGT
+        return:
+            mismatch_list : mismatch information, [None, C>A, None, None]
+        '''
         query_1_prime_encoded = cls.seq_prime_encoder(query_1, cls.prime_main_encoder_dict)
         query_2_prime_encoded = cls.seq_prime_encoder(query_2, cls.prime_sub_encoder_dict)
 
         query_multiply = query_1_prime_encoded * query_2_prime_encoded
         mismatch_list = list(map(cls.prime_multi_encoder_dict.get,query_multiply))
+        return mismatch_list
 
+    @classmethod
+    def __seq_mismatch_position_info_list(cls, query_1, query_2):
+        '''
+        args:
+            query_1     : query sequence, ACGT
+            query_2     : query sequence, AAGT
+        return:
+            mismatch_info_list : mismatch information with position, [2:C>A]
+        '''
+        mismatch_list = cls.__seq_mismatch_info_list(query_1, query_2)
         mismatch_info_list = []
         for index, _info in enumerate(mismatch_list):
             if _info:
-                _info_str = f"{index}:{_info}"
+                _info_str = f"{index+1}:{_info}"
                 mismatch_info_list.append(_info_str)
-        return mismatch_info
+        return mismatch_info_list
 
     @classmethod
     def seq_mismatch_info_list(cls, query_1, query_2):
-        mismatch_info_list = cls.__seq_mismatch_calculator(query_1, query_2)
+        '''
+        args:
+            query_1     : query sequence, ACGT
+            query_2     : query sequence, AAGT
+        return:
+            mismatch_info_list : list, mismatch information with position, [2:C>A]
+        '''
+        mismatch_info_list = cls.__seq_mismatch_position_info_list(query_1, query_2)
         return mismatch_info_list
 
     @classmethod
     def seq_mismatch_info_str(cls, query_1, query_2):
-        mismatch_info_list = cls.__seq_mismatch_calculator(query_1, query_2)
+        '''
+        args:
+            query_1     : query sequence, ACGT
+            query_2     : query sequence, AACT
+        return:
+            mismatch_info_str : str, mismatch information with position, '2:C>A,3:G>C'
+        '''
+        mismatch_info_list = cls.__seq_mismatch_position_info_list(query_1, query_2)
         mismatch_info_str = ','.join(mismatch_info_list)
         return mismatch_info_str
 
+    @classmethod
+    def seq_mismatch_count(cls,query_1, query_2):
+        '''
+        args:
+            query_1     : query sequence, ACGT
+            query_2     : query sequence, AACT
+        return:
+            mismatch_count : mismatch count, 2
+        '''
+        query_1_one_hot = one_hot_encoder.seq_encoder(query_1)
+        query_2_one_hot = one_hot_encoder.seq_encoder(query_2)
+        mismatch_matrix = np.clip(query_1_one_hot - query_2_one_hot, 0, None)
+        mismatch_count = np.sum(mismatch_matrix)
+        return mismatch_count
+
+    @classmethod
+    def seq_mismatch_count_list(cls,query, mismatch_seq_list):
+        '''
+        args:
+            query_1     : query sequence, ACGT
+            query_2     : mismatch sequence list, [AACT, AACG, AACC]
+        return:
+            mismatch_count_list : mismatch count list, [2,3,3]
+        '''
+        mismatch_count_list = list(map(
+            lambda mismatch_seq: cls.seq_mismatch_count(query,mismatch_seq),
+            mismatch_seq_list
+        ))
+        return mismatch_count_list
 
 
 
