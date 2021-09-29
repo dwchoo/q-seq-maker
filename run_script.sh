@@ -1,7 +1,7 @@
 #/bin/bash
 python analyser.py \
-    -s ./data/other_paper_data/other_paper_Cpf1_digenome_seq.txt \
-    --name other_digenome_seq \
+    -s ./data/generate_1000_generate_12_data/query_generate_1000_generate_12_data.txt \
+    --name Cpf1_12set_1000 \
     --PAM TTTV \
     --PAM_end 0 \
     --path ./data \

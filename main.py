@@ -54,13 +54,14 @@ def query_seq_generate(
     if verbose: print("Finish cas-offinder.\nStart to analysis results")
     result_df = analysis_cas_offinder_result(
         output_file_path = output_file_path,
-        query_text_path  = ontarget_file_path,
+        query_list       = data.ontarget_data,
         job_name         = job_name,
         save_csv         = True,
         PAM              = PAM,
         PAM_end          = PAM_end,
         max_mismatch     = 4,
         slice_length_list= [7,7,6],
+        check_file=False,
     )
     if verbose: print(f'{job_name} Finished')
     return result_df

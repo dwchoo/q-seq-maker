@@ -8,6 +8,58 @@ import pandas as pd
 import pathlib
 from pathlib import Path
 
+class seq_processing:
+    @classmethod
+    def limit_seq_length(cls,seq,max_length=20,cut_end=True):
+        '''
+        args:
+            seq         : sequence, ACGTAAC
+            max_length  : sequence length, 
+                          length of cpf1 is 23bp, but we get only 20bp
+            cut_end     : Cut position, Bool,
+                          If you want to cut front, it is False,
+        return:
+            seq         : sliced sequence, ACGTA/AC
+        '''
+        seq_length = len(seq)
+        assert seq_length >= max_length, f"Check seq length, seq:{seq_length}, max:{max_length}"
+        if not cut_end:
+            start_pos = seq_length - max_length
+            end_pos   = seq_length
+        else:
+            start_pos = 0
+            end_pos   = max_length
+        return seq[start_pos:end_pos]
+
+    @classmethod
+    def slice_seq_in_list(cls,data_list, max_length=20, cut_end=True):
+        new_data_list = list(map(
+            lambda seq : cls.limit_seq_length(seq,max_length,cut_end),
+            data_list
+        ))
+        return new_data_list
+
+
+    @classmethod
+    def delete_comment_in_list(cls,data_list,letter='#'):
+        new_list = []
+        for item in data_list:
+            if letter in item:
+                continue
+            else:
+                new_list.append(item.upper())
+        return new_list
+
+    @classmethod
+    def seq_upper_in_list(cls,data_list):
+        new_list = []
+        for item in data_list:
+            assert str == type(item), f"Check file type, {type(item)}"
+            new_list.append(item.upper())
+        return new_list
+
+
+
 
 class generate_mismatch_data:
     '''
@@ -156,19 +208,20 @@ class generate_mismatch_data:
 
     
     @classmethod
-    def read_sequence_tolist(cls, file_name='ontarget_seq.txt',check_file=True):
+    def read_sequence_tolist(cls, file_name='ontarget_seq.txt'):
         with open(file_name, 'r') as f:
             data = f.read().splitlines()
-        if check_file is False:
-            return data
-        else:
-            new_data_list = []
-            for _line in data:
-                if '#' in _line:
-                    continue
-                else:
-                    new_data_list.append(_line.upper())
-            return new_data_list
+        return data
+        #if check_file is False:
+        #    return data
+        #else:
+        #    new_data_list = []
+        #    for _line in data:
+        #        if '#' in _line:
+        #            continue
+        #        else:
+        #            new_data_list.append(_line.upper())
+        #    return new_data_list
 
 
 class generate_8_nC2_data(generate_mismatch_data):

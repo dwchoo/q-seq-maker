@@ -28,9 +28,8 @@ def ontarget_file_analyser(
     output_file_path = f"{job_path}/{job_name}_output.txt"
 
     if Path(ontarget_text_file_path).is_file():
-        data_list = generate_mismatch_data.read_sequence_tolist(
+        data_list = data_generator.generate_mismatch_data.read_sequence_tolist(
             file_name=ontarget_text_file_path,
-            check_file=True,
         )
     else:
         sys.exit(f"Cannot find file. Please check path again.\npath:{ontarget_text_file_path}")
@@ -38,6 +37,16 @@ def ontarget_file_analyser(
 
     if verbose: print(f"{job_name} Start!!")
     if verbose: print("Generate cas-offinder script")
+    # Sequence file have comment and lower character
+    data_list = data_generator.seq_processing.delete_comment_in_list(
+        data_list = data_list,
+        letter='#'
+    )
+    data_list = data_generator.seq_processing.slice_seq_in_list(
+        data_list= data_list,
+        max_length= 20,
+        cut_end = True,
+    )
     make_cas_offinder_script(
         query_seq_list = data_list,
         job_name = job_name,
@@ -56,7 +65,7 @@ def ontarget_file_analyser(
     if verbose: print("Finish cas-offinder.\nStart to analysis results")
     result_df = analysis_cas_offinder_result(
         output_file_path = output_file_path,
-        query_text_path  = ontarget_text_file_path,
+        query_list       = data_list,
         job_name         = job_name,
         save_csv         = True,
         PAM              = PAM,

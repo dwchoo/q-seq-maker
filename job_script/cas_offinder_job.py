@@ -83,13 +83,14 @@ def run_cas_offinder(job_name, file_path, log=True, log_head_message=None):
 
 def analysis_cas_offinder_result(
     output_file_path,
-    query_text_path,
+    query_list,
     job_name = None,
     save_csv=True,
     PAM = 'NGG',
     PAM_end = True,
     max_mismatch = 4,
     slice_length_list = [7,7,6],
+    check_file = True,
 ):
     '''
     args:
@@ -122,8 +123,7 @@ def analysis_cas_offinder_result(
         names=header,
         dtype=data_type,
     )
-    # load query sequence text file
-    query_list = np.array(generate_mismatch_data.read_sequence_tolist(query_text_path))
+    query_list = np.array(query_list)#np.array(generate_mismatch_data.read_sequence_tolist(query_text_path))
     # convert sequence to type code
     query_type_code_list = query_type_code_encoder.batch_seq_type_code_encoder(
         seq_list= query_list,
