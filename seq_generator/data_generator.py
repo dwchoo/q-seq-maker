@@ -1,5 +1,6 @@
 from seq_generator.query_generator import generate_ontarget_seq_set_list
 from seq_generator.mismatch_generator import *
+import seq_generator.mismatch_generator as mmg
 from seq_evaluator.evaluator import divide_seq_edit_distance
 from encoder_decoder.seq_encoder_decoder import mismatch_calculator
 
@@ -7,6 +8,7 @@ import numpy as np
 import pandas as pd
 import pathlib
 from pathlib import Path
+from functools import partial
 
 class seq_processing:
     @classmethod
@@ -194,7 +196,8 @@ class generate_mismatch_data:
 
         df_columns = ['on-target','off-target','number of mismatch','mismatch info']
         df_dtype = {
-            'on-target' : 'category',' off-target' : 'category',
+            'on-target' : 'category',
+            'off-target' : 'category',
             'number of mismatch' : 'int8',}
         df_data = pd.DataFrame(
             df_data_list,
@@ -250,3 +253,76 @@ class generate_12_data(generate_mismatch_data):
         #self.mis_1_data = self.generate_one_mis_data(self.ontarget_data)
         #self.mis_2_data = self.generate_nC2_data(self.ontarget_data)
                
+
+
+class generate_NB_mm_from_query(generate_mismatch_data):
+    def __init__(self,query_seq, job_name, path='.'):
+        self.query_seq = query_seq
+        self.job_name  = job_name
+        self.path      = path
+
+        self.one_mm_seq_list = self.generate_one_mis_data(self.query_seq)
+        self.two_mm_seq_list = self.generate_nC2_data(self.query_seq)
+    
+    def save_seq_to_text(self,):
+        mm_data_list = self.data_concatenate(self.one_mm_seq_list,self.two_mm_seq_list)
+        query_seq = self.query_seq
+        seq_all = np.append([query_seq],mm_data_list)
+
+        folder_path = self._generate_mismatch_data__return_job_folder_path_N_make(
+            self.job_name,
+            self.path
+        )
+        file_path = f'{folder_path}/seq_list_{self.job_name}.txt'
+        self._generate_mismatch_data__save_sequence(seq_all,file_path)
+
+    def return_dataframe(self,save=False):
+        mm_data_list = self.data_concatenate(self.one_mm_seq_list,self.two_mm_seq_list)
+        query_seq = self.query_seq
+        self.df_data = self._generate_mismatch_data__return_mismatch_data_csv(
+            [query_seq],
+            [mm_data_list]
+        )
+
+        if save:
+            folder_path = self._generate_mismatch_data__return_job_folder_path_N_make(
+                self.job_name,
+                self.path
+            )
+            file_path = f'{folder_path}/seq_info_{self.job_name}.csv'
+            self.df_data.to_csv(file_path,index=False)
+        return self.df_data
+
+
+
+
+    def generate_one_mis_data(self,query_seq):
+        one_mm_seq_list = mmg.one_mismatch_seq_list(query_seq)
+        return one_mm_seq_list
+
+    def generate_nC2_data(self,query_seq):
+        NB_SS = partial(
+            mmg.make_mismatch.change_nucleobase_two_input,
+            change_type_list=[True,True],
+        )
+        NB_SD = partial(
+            mmg.make_mismatch.change_nucleobase_two_input,
+            change_type_list=[True,False],
+        )
+        NB_DS = partial(
+            mmg.make_mismatch.change_nucleobase_two_input,
+            change_type_list=[False,True],
+        )
+        NB_DD = partial(
+            mmg.make_mismatch.change_nucleobase_two_input,
+            change_type_list=[False,False],
+        )
+        NB_SS_list = mmg.double_nC2_seq_list_with_method(query_seq,NB_SS)
+        NB_SD_list = mmg.double_nC2_seq_list_with_method(query_seq,NB_SD)
+        NB_DS_list = mmg.double_nC2_seq_list_with_method(query_seq,NB_DS)
+        NB_DD_list = mmg.double_nC2_seq_list_with_method(query_seq,NB_DD)
+        two_mm_list = np.stack([NB_SS_list,NB_SD_list,NB_DS_list,NB_DD_list],axis=1)
+        two_mm_list = two_mm_list.reshape(-1,)
+        return two_mm_list
+
+

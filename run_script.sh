@@ -1,8 +1,12 @@
 #/bin/bash
-python analyser.py \
-    -s ./data/generate_1000_generate_12_data/query_generate_1000_generate_12_data.txt \
-    --name Cpf1_12set_1000 \
-    --PAM TTTV \
-    --PAM_end 0 \
-    --path ./data \
-    --verbose
+#TYPE=111
+for TYPE in 112 121 122 211 212 221 222
+do
+    python analyser.py \
+        -s ./data/other_paper_offtarget/type_$TYPE/seq_list_type_$TYPE.txt \
+        --name type_$TYPE \
+        --PAM TTTV \
+        --PAM_end 0 \
+        --path ./data/other_paper_offtarget \
+        --verbose
+done

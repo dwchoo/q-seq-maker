@@ -47,6 +47,35 @@ def double_nC2_seq_list(seq, first_change=True):
                 mis2_seq_list.append(seq_encoder_decoder.num2acgt(_tmp_seq_num))
     return np.array(mis2_seq_list)
 
+def double_nC2_seq_list_with_method(seq, change_method):
+    '''
+    Select all position in sequence(nC2)
+    Convert to the others nucleotides at one position(first or seconde, Args first_change)
+    args : 
+        seq                 : Query sequence
+        change_method       : Mutation method, Two input Two output,
+                              ex) ramdon, AT_GC, nucleobase...
+    output : [[ACGT,CGT,GGT,...],[...]]
+    '''
+    assert not isinstance(seq[0], (int,float,complex)), f'{type(seq[0])}'
+
+    if type(seq) == str:
+        seq = list(seq)
+    seq_num = seq_encoder_decoder.acgt2num(seq)
+    acgt_num_list = np.arange(1,5)
+    mis2_seq_list = []
+    for pos_1 in range(len(seq_num)):
+        for pos_2 in range(pos_1+1,len(seq_num)):
+            __tmp_seq_num = np.array(seq_num).copy()
+            __NT_1 = __tmp_seq_num[pos_1]
+            __NT_2 = __tmp_seq_num[pos_2]
+            __NT_1_changed, __NT_2_changed = \
+                change_method(__NT_1, __NT_2)
+            __tmp_seq_num[pos_1] = __NT_1_changed
+            __tmp_seq_num[pos_2] = __NT_2_changed
+            mis2_seq_list.append(seq_encoder_decoder.num2acgt(__tmp_seq_num))
+
+    return np.array(mis2_seq_list)
 
 def distance_based_change_diff_length_list(seq, length, num):
     '''
@@ -206,11 +235,20 @@ class make_mismatch:
         4 : np.array([2,3],dtype=np.int8), #T -> C,G
     }
 
-    change_rule_necleobase = {
+    # Purine     : A(1), G(3)
+    # Pyrimidine : C(2), T(4)
+    change_rule_same_necleobase = {
         1 : np.array([3],dtype=np.int8), #A -> G
         2 : np.array([4],dtype=np.int8), #C -> T
         3 : np.array([1],dtype=np.int8), #G -> A
         4 : np.array([2],dtype=np.int8), #T -> C
+    }
+    
+    change_rule_diff_necleobase = {
+        1 : np.array([2,4],dtype=np.int8), #A -> C,T
+        2 : np.array([1,3],dtype=np.int8), #C -> A,G
+        3 : np.array([2,4],dtype=np.int8), #G -> C,T
+        4 : np.array([1,3],dtype=np.int8), #T -> A,G
     }
     
     @classmethod
@@ -272,20 +310,45 @@ class make_mismatch:
 
     # nucleobase
     @classmethod
-    def change_nucleobase(cls, letter_num):
+    def change_nucleobase(cls, letter_num, same=True):
         '''
+        same:
             A <-> G
             C <-> T
+        diff:
+            AG <-> CT
         '''
-        return cls.__change_base(letter_num, cls.change_rule_necleobase)
+        if same:
+            return cls.__change_base(letter_num,cls.change_rule_same_necleobase)
+        else:
+            return cls.__change_base(letter_num,cls.change_rule_diff_necleobase)
 
     @classmethod
-    def change_nucleobase_list(cls, letter_num):
+    def change_nucleobase_two_input(cls, letter_num_1, letter_num_2, change_type_list=[True,True]):
         '''
+        same:
             A <-> G
             C <-> T
+        diff:
+            AG <-> CT
         '''
-        return cls.__change_base_list(letter_num, cls.change_rule_necleobase)
+        changed_letter_num_1 = cls.change_nucleobase(letter_num_1,change_type_list[0])
+        changed_letter_num_2 = cls.change_nucleobase(letter_num_2,change_type_list[1])
+        return changed_letter_num_1, changed_letter_num_2
+
+    @classmethod
+    def change_nucleobase_list(cls, letter_num,same=True):
+        '''
+        same:
+            A <-> G
+            C <-> T
+        diff:
+            AG <-> CT
+        '''
+        if same:
+            return cls.__change_base_list(letter_num, cls.change_rule_same_necleobase)
+        else:
+            return cls.__change_base_list(letter_num, cls.change_rule_diff_necleobase)
 
 
     
