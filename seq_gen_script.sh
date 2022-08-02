@@ -2,6 +2,10 @@
 
 activate () {
     SCRIPTPATH="$( cd -- "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
+
+    python -m pip install -U pip
+    python -m pip install virtualenv
+    python -m venv .venv
     source $SCRIPTPATH/.venv/bin/activate
     python -m pip install -r $SCRIPTPATH/requirements.txt
 }
@@ -10,7 +14,7 @@ activate
 
 python main.py \
     --name Data_011 \
-    --num_set 10 \
+    --num_set 10000000 \
     --threshold 7 \
     --PAM NGG \
     --path ./data \
