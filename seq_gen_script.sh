@@ -5,7 +5,7 @@ activate () {
 
     python -m pip install -U pip
     python -m pip install virtualenv
-    python -m venv .venv --withou-pip
+    python -m venv .venv --without-pip
     curl https://bootstrap.pypa.io/get-pip.py | $SCRIPTPATH/.venv/bin/python
 
     source $SCRIPTPATH/.venv/bin/activate
