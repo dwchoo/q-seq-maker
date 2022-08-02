@@ -251,7 +251,7 @@ class mismatch_calculator:
 
 
 # ACCCGT -> 122234
-def acgt2num(seq):
+def acgt2num(seq,join=False):
     '''
     input : ACGT
     Convert sequence to number
@@ -262,8 +262,14 @@ def acgt2num(seq):
         'C' : 2,
         'G' : 3,
         'T' : 4,
+        'N' : 5,
+        'n' : 5,
     }
-    return list(map(lambda x : acgt_dict.get(x,None),seq))
+    result = list(map(lambda x : acgt_dict.get(x,None),seq))
+    if join:
+        return ''.join(map(str,result))
+    else:
+        return result
 
 
 # 1223 -> ACCGT
